@@ -20,6 +20,7 @@
       <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
   <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
   <script src="https://kit.fontawesome.com/8a8c57f9cf.js" crossorigin="anonymous"></script>
+  <script src="js/security-utils.js"></script>
   <link href="https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css" rel="stylesheet" />
 
 <style>
@@ -1015,7 +1016,7 @@ window.addEventListener('DOMContentLoaded', function() {
 <script type="text/javascript" >
 document.getElementById("defaultOpen").click();
 
-// Custom tooltip implementation with HTML support
+// Custom tooltip implementation with safe HTML entity decoding
 $(document).ready(function() {
 	console.log("Found tooltip icons:", $(".tooltip-icon").length);
 
@@ -1026,13 +1027,11 @@ $(document).ready(function() {
 		var htmlContent = $(this).attr('data-tooltip');
 		if (!htmlContent) return;
 
-		// Decode HTML entities
-		var txt = document.createElement("textarea");
-		txt.innerHTML = htmlContent;
-		var decoded = txt.value;
+		// Safely decode HTML entities using SecurityUtils (prevents XSS)
+		var decoded = SecurityUtils.decodeHtmlEntities(htmlContent);
 
-		// Set tooltip content and show it
-		$tooltip.html(decoded).fadeIn(200);
+		// Set tooltip content as text (not HTML) and show it
+		$tooltip.text(decoded).fadeIn(200);
 
 		// Position tooltip
 		var iconOffset = $(this).offset();

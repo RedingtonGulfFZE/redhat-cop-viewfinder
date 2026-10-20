@@ -5,6 +5,7 @@
   <link rel="stylesheet" href="//code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
   <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
   <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+  <script src="js/security-utils.js"></script>
 <link rel="stylesheet" href="css/table.css">
 <link rel="stylesheet" href="css/style.css">
 
@@ -1974,7 +1975,7 @@ function scrollToTheme(themeId) {
     document.getElementById(themeId).scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Theme overview display in dedicated panel
+// Theme overview display in dedicated panel (XSS-safe)
 $(document).ready(function() {
     $(".theme-tooltip").on('mouseenter', function(e) {
         var overviewText = $(this).attr('data-tooltip');
@@ -1984,13 +1985,19 @@ $(document).ready(function() {
 
         if (!overviewText) return;
 
-        // Decode HTML entities
-        var txt = document.createElement("textarea");
-        txt.innerHTML = overviewText;
-        var decoded = txt.value;
+        // Safely decode HTML entities using SecurityUtils (prevents XSS)
+        var decoded = SecurityUtils.decodeHtmlEntities(overviewText);
 
-        // Update the overview display
-        $('#themeOverviewIcon').html('<i class="fa-solid fa-' + themeIcon + '" style="color: ' + themeColor + ';"></i>');
+        // Validate and sanitize icon and color to prevent XSS
+        var safeIcon = SecurityUtils.sanitizeIconName(themeIcon, 'question');
+        var safeColor = SecurityUtils.sanitizeColor(themeColor, '#0066cc');
+
+        // Update the overview display using DOM manipulation (safe)
+        var iconElement = $('<i></i>')
+            .addClass('fa-solid')
+            .addClass('fa-' + safeIcon)
+            .css('color', safeColor);
+        $('#themeOverviewIcon').empty().append(iconElement);
         $('#themeOverviewTitle').text(themeName);
         $('#themeOverviewText').text(decoded);
 

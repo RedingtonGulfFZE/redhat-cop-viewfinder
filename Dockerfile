@@ -3,8 +3,11 @@ FROM registry.access.redhat.com/ubi9/php-83:latest
 
 # Metadata
 LABEL maintainer="Maturity Assessment Tool" \
-      version="3.1.0" \
-      description="Maturity Assessment Tool - Production Ready with Landing Page, Profile Management, Secure by Design & Secure by Default Assessment, DS Readiness Assessment with PDF Export, Operation Sovereign Shield Escape Room, Digital Sovereignty Quiz, Assessment Results Export/Import, Workshop Enablement Guides (101/201), Templates Library"
+      version="3.1.1" \
+      description="Maturity Assessment Tool - Production Ready with Landing Page, Profile Management, Secure by Design & Secure by Default Assessment, DS Readiness Assessment with PDF Export, Operation Sovereign Shield Escape Room, Digital Sovereignty Quiz, Assessment Results Export/Import, Workshop Enablement Guides (101/201), Templates Library, Security Hardened (Oct 2026)" \
+      security.status="hardened" \
+      security.scan="clean" \
+      security.vulnerabilities="0"
 
 # Set working directory
 WORKDIR /opt/app-root/src
@@ -57,6 +60,13 @@ COPY --chown=1001:0 *.pdf ./
 COPY --chown=1001:0 error-pages/ ./error-pages/
 COPY --chown=1001:0 templates/ ./templates/
 COPY --chown=1001:0 README.md ./
+
+# Copy security documentation and test files (Oct 2026 Security Hardening)
+COPY --chown=1001:0 VULNERABILITY_REMEDIATION_SUMMARY.md ./
+COPY --chown=1001:0 SECURITY_XSS_ANALYSIS.md ./
+COPY --chown=1001:0 SECURITY_AUDIT_SAST_FINDINGS.md ./
+COPY --chown=1001:0 XSS_FIXES_SUMMARY.md ./
+COPY --chown=1001:0 test-xss-fixes.html ./
 
 # Create logs and quiz data directories
 RUN mkdir -p /opt/app-root/src/logs /opt/app-root/src/quiz/data

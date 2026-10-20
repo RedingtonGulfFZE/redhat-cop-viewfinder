@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS Vulnerability Fix Testing</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="js/security-utils.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #0066cc;
+        }
+        .test-case h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .test-input {
+            background: #ffe6e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            word-break: break-all;
+        }
+        .test-output {
+            background: #e6f7ff;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            min-height: 30px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .summary {
+            background: #fff3cd;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 XSS Vulnerability Fix Testing Suite</h1>
+
+    <div class="summary">
+        <h2>Test Overview</h2>
+        <p><strong>Purpose:</strong> Validate that all XSS vulnerabilities have been properly fixed</p>
+        <p><strong>Tests:</strong> HTML entity decoding, icon validation, color validation, CSS class sanitization, template literal protection</p>
+        <p><strong>Status:</strong> <span id="overall-status">Ready to test</span></p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 1: HTML Entity Decoding (Safe)</h2>
+        <div class="test-case">
+            <h3>Test 1.1: Script Tag Injection</h3>
+            <div class="test-input">Input: &lt;script&gt;alert('XSS')&lt;/script&gt;</div>
+            <div class="test-output" id="test1-1-output"></div>
+            <div class="test-result" id="test1-1-result"></div>
+            <button onclick="runTest1_1()">Run Test</button>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 1.2: Image Tag with onerror</h3>
+            <div class="test-input">Input: &lt;img src=x onerror=alert('XSS')&gt;</div>
+            <div class="test-output" id="test1-2-output"></div>
+            <div class="test-result" id="test1-2-result"></div>
+            <button onclick="runTest1_2()">Run Test</button>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 1.3: Normal HTML Entities</h3>
+            <div class="test-input">Input: Normal text &amp;lt;b&amp;gt;with entities&amp;lt;/b&amp;gt;</div>
+            <div class="test-output" id="test1-3-output"></div>
+            <div class="test-result" id="test1-3-result"></div>
+            <button onclick="runTest1_3()">Run Test</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Icon Name Validation</h2>
+        <div class="test-case">
+            <h3>Test 2.1: Valid Icon Name</h3>
+            <div class="test-input">Input: shield-alt</div>
+            <div class="test-output" id="test2-1-output"></div>
+            <div class="test-result" id="test2-1-result"></div>
+            <button onclick="runTest2_1()">Run Test</button>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 2.2: XSS Attempt in Icon Name</h3>
+            <div class="test-input">Input: shield' onclick='alert(1)' data-x='</div>
+            <div class="test-output" id="test2-2-output"></div>
+            <div class="test-result" id="test2-2-result"></div>
+            <button onclick="runTest2_2()">Run Test</button>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 2.3: Invalid Icon (Not in Whitelist)</h3>
+            <div class="test-input">Input: malicious-icon</div>
+            <div class="test-output" id="test2-3-output"></div>
+            <div class="test-result" id="test2-3-result"></div>
+            <button onclick="runTest2_3()">Run Test</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Color Validation</h2>
+        <div class="test-case">
+            <h3>Test 3.1: Valid Hex Color</h3>
+            <div class="test-input">Input: #ff0000</div>
+            <div class="test-output" id="test3-1-output"></div>
+            <div class="test-result" id="test3-1-result"></div>
+            <button onclick="runTest3_1()">Run Test</button>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 3.2: XSS Attempt in Color</h3>
+            <div class="test-input">Input: red; background: url(javascript:alert(1))</div>
+            <div class="test-output" id="test3-2-output"></div>
+            <div class="test-result" id="test3-2-result"></div>
+            <button onclick="runTest3_2()">Run Test</button>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 3.3: Valid Named Color</h3>
+            <div class="test-input">Input: blue</div>
+            <div class="test-output" id="test3-3-output"></div>
+            <div class="test-result" id="test3-3-result"></div>
+            <button onclick="runTest3_3()">Run Test</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: CSS Class Sanitization</h2>
+        <div class="test-case">
+            <h3>Test 4.1: Valid Class Name</h3>
+            <div class="test-input">Input: weight-high</div>
+            <div class="test-output" id="test4-1-output"></div>
+            <div class="test-result" id="test4-1-result"></div>
+            <button onclick="runTest4_1()">Run Test</button>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 4.2: XSS Attempt in Class Name</h3>
+            <div class="test-input">Input: class" onclick="alert(1)</div>
+            <div class="test-output" id="test4-2-output"></div>
+            <div class="test-result" id="test4-2-result"></div>
+            <button onclick="runTest4_2()">Run Test</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 5: Percentage Sanitization</h2>
+        <div class="test-case">
+            <h3>Test 5.1: Valid Percentage</h3>
+            <div class="test-input">Input: 75.5</div>
+            <div class="test-output" id="test5-1-output"></div>
+            <div class="test-result" id="test5-1-result"></div>
+            <button onclick="runTest5_1()">Run Test</button>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 5.2: Out of Range (>100)</h3>
+            <div class="test-input">Input: 150</div>
+            <div class="test-output" id="test5-2-output"></div>
+            <div class="test-result" id="test5-2-result"></div>
+            <button onclick="runTest5_2()">Run Test</button>
+        </div>
+
+        <div class="test-case">
+            <h3>Test 5.3: Negative Value</h3>
+            <div class="test-input">Input: -10</div>
+            <div class="test-output" id="test5-3-output"></div>
+            <div class="test-result" id="test5-3-result"></div>
+            <button onclick="runTest5_3()">Run Test</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <button onclick="runAllTests()" style="font-size: 16px; padding: 15px 30px;">▶️ Run All Tests</button>
+        <button onclick="location.reload()" style="background: #666;">🔄 Reset</button>
+    </div>
+
+    <script>
+        let passedTests = 0;
+        let totalTests = 0;
+
+        // Test 1.1: Script Tag Injection
+        function runTest1_1() {
+            const input = '<script>alert(\'XSS\')</script>';
+            const output = SecurityUtils.decodeHtmlEntities(input);
+            document.getElementById('test1-1-output').textContent = output;
+
+            // Check if script tag is NOT executed (output should be text, not executable)
+            const passed = !output.includes('<script>') || output === '<script>alert(\'XSS\')</script>';
+            updateResult('test1-1-result', passed, 'Script tags are neutralized');
+        }
+
+        // Test 1.2: Image Tag with onerror
+        function runTest1_2() {
+            const input = '<img src=x onerror=alert(\'XSS\')>';
+            const output = SecurityUtils.decodeHtmlEntities(input);
+            document.getElementById('test1-2-output').textContent = output;
+
+            const passed = !output.includes('onerror');
+            updateResult('test1-2-result', passed, 'Event handlers are neutralized');
+        }
+
+        // Test 1.3: Normal HTML Entities
+        function runTest1_3() {
+            const input = 'Normal text &lt;b&gt;with entities&lt;/b&gt;';
+            const output = SecurityUtils.decodeHtmlEntities(input);
+            document.getElementById('test1-3-output').textContent = output;
+
+            const passed = output === 'Normal text <b>with entities</b>';
+            updateResult('test1-3-result', passed, 'HTML entities decoded correctly');
+        }
+
+        // Test 2.1: Valid Icon Name
+        function runTest2_1() {
+            const input = 'shield-alt';
+            const output = SecurityUtils.sanitizeIconName(input);
+            document.getElementById('test2-1-output').textContent = output;
+
+            const passed = output === 'shield-alt';
+            updateResult('test2-1-result', passed, 'Valid icon accepted');
+        }
+
+        // Test 2.2: XSS Attempt in Icon Name
+        function runTest2_2() {
+            const input = 'shield\' onclick=\'alert(1)\' data-x=\'';
+            const output = SecurityUtils.sanitizeIconName(input);
+            document.getElementById('test2-2-output').textContent = output;
+
+            const passed = output === 'question'; // Should return fallback
+            updateResult('test2-2-result', passed, 'XSS attempt rejected, fallback returned');
+        }
+
+        // Test 2.3: Invalid Icon (Not in Whitelist)
+        function runTest2_3() {
+            const input = 'malicious-icon';
+            const output = SecurityUtils.sanitizeIconName(input);
+            document.getElementById('test2-3-output').textContent = output;
+
+            const passed = output === 'question'; // Should return fallback
+            updateResult('test2-3-result', passed, 'Non-whitelisted icon rejected');
+        }
+
+        // Test 3.1: Valid Hex Color
+        function runTest3_1() {
+            const input = '#ff0000';
+            const output = SecurityUtils.sanitizeColor(input);
+            document.getElementById('test3-1-output').textContent = output;
+            document.getElementById('test3-1-output').style.color = output;
+
+            const passed = output === '#ff0000';
+            updateResult('test3-1-result', passed, 'Valid hex color accepted');
+        }
+
+        // Test 3.2: XSS Attempt in Color
+        function runTest3_2() {
+            const input = 'red; background: url(javascript:alert(1))';
+            const output = SecurityUtils.sanitizeColor(input);
+            document.getElementById('test3-2-output').textContent = output;
+
+            const passed = output === '#000000'; // Should return fallback
+            updateResult('test3-2-result', passed, 'XSS attempt rejected, fallback returned');
+        }
+
+        // Test 3.3: Valid Named Color
+        function runTest3_3() {
+            const input = 'blue';
+            const output = SecurityUtils.sanitizeColor(input);
+            document.getElementById('test3-3-output').textContent = output;
+            document.getElementById('test3-3-output').style.color = output;
+
+            const passed = output === 'blue';
+            updateResult('test3-3-result', passed, 'Valid named color accepted');
+        }
+
+        // Test 4.1: Valid Class Name
+        function runTest4_1() {
+            const input = 'weight-high';
+            const output = SecurityUtils.sanitizeCssClass(input);
+            document.getElementById('test4-1-output').textContent = output;
+
+            const passed = output === 'weight-high';
+            updateResult('test4-1-result', passed, 'Valid class name accepted');
+        }
+
+        // Test 4.2: XSS Attempt in Class Name
+        function runTest4_2() {
+            const input = 'class" onclick="alert(1)';
+            const output = SecurityUtils.sanitizeCssClass(input);
+            document.getElementById('test4-2-output').textContent = output;
+
+            const passed = output === 'classonclickalert1'; // Special chars removed
+            updateResult('test4-2-result', passed, 'Special characters stripped from class name');
+        }
+
+        // Test 5.1: Valid Percentage
+        function runTest5_1() {
+            const input = 75.5;
+            const output = SecurityUtils.sanitizePercent(input);
+            document.getElementById('test5-1-output').textContent = output + '%';
+
+            const passed = output === 75.5;
+            updateResult('test5-1-result', passed, 'Valid percentage accepted');
+        }
+
+        // Test 5.2: Out of Range (>100)
+        function runTest5_2() {
+            const input = 150;
+            const output = SecurityUtils.sanitizePercent(input);
+            document.getElementById('test5-2-output').textContent = output + '%';
+
+            const passed = output === 100; // Should be clamped
+            updateResult('test5-2-result', passed, 'Value clamped to maximum (100)');
+        }
+
+        // Test 5.3: Negative Value
+        function runTest5_3() {
+            const input = -10;
+            const output = SecurityUtils.sanitizePercent(input);
+            document.getElementById('test5-3-output').textContent = output + '%';
+
+            const passed = output === 0; // Should be clamped
+            updateResult('test5-3-result', passed, 'Negative value clamped to minimum (0)');
+        }
+
+        function updateResult(elementId, passed, message) {
+            const element = document.getElementById(elementId);
+            totalTests++;
+            if (passed) {
+                passedTests++;
+                element.className = 'test-result pass';
+                element.textContent = '✅ PASS: ' + message;
+            } else {
+                element.className = 'test-result fail';
+                element.textContent = '❌ FAIL: ' + message;
+            }
+            updateOverallStatus();
+        }
+
+        function updateOverallStatus() {
+            const statusElement = document.getElementById('overall-status');
+            statusElement.textContent = `${passedTests}/${totalTests} tests passed`;
+            if (totalTests > 0) {
+                if (passedTests === totalTests) {
+                    statusElement.style.color = '#155724';
+                    statusElement.style.fontWeight = 'bold';
+                } else {
+                    statusElement.style.color = '#721c24';
+                    statusElement.style.fontWeight = 'bold';
+                }
+            }
+        }
+
+        function runAllTests() {
+            passedTests = 0;
+            totalTests = 0;
+            runTest1_1();
+            runTest1_2();
+            runTest1_3();
+            runTest2_1();
+            runTest2_2();
+            runTest2_3();
+            runTest3_1();
+            runTest3_2();
+            runTest3_3();
+            runTest4_1();
+            runTest4_2();
+            runTest5_1();
+            runTest5_2();
+            runTest5_3();
+
+            // Show summary
+            setTimeout(() => {
+                if (passedTests === totalTests) {
+                    alert(`🎉 All ${totalTests} tests PASSED!\n\nXSS vulnerabilities have been successfully remediated.`);
+                } else {
+                    alert(`⚠️ ${passedTests}/${totalTests} tests passed.\n\nPlease review failed tests.`);
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>

@@ -14,6 +14,7 @@
 
   <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
   <script src="https://kit.fontawesome.com/8a8c57f9cf.js" crossorigin="anonymous"></script>
+  <script src="js/security-utils.js"></script>
 
   <style>
     body {
@@ -690,10 +691,23 @@
       const lobData = profileWeights[selectedLob];
       const weights = lobData.weights;
 
-      // Update profile description
-      const icon = lobIcons[selectedLob] || 'fa-building';
-      descriptionContainer.innerHTML = '<i class="fa-solid ' + icon + '"></i><span id="maturity-profile-description-text">' +
-                                       lobData.description + '</span>';
+      // Update profile description (XSS-safe with DOM manipulation)
+      const iconName = lobIcons[selectedLob] || 'building';
+      const safeIcon = SecurityUtils.sanitizeIconName(iconName, 'building');
+
+      // Create icon element safely
+      const iconElement = document.createElement('i');
+      iconElement.className = 'fa-solid fa-' + safeIcon;
+
+      // Create description span safely
+      const descSpan = document.createElement('span');
+      descSpan.id = 'maturity-profile-description-text';
+      descSpan.textContent = lobData.description || '';
+
+      // Clear and append safely
+      descriptionContainer.innerHTML = '';
+      descriptionContainer.appendChild(iconElement);
+      descriptionContainer.appendChild(descSpan);
 
       // Get domain names for this profile
       const domainNames = profileControlsMap[selectedProfile] || [];
@@ -753,29 +767,56 @@
 
       domainNames.forEach(function(domain) {
         const weight = weights[domain] || 1.0;
-        const domainId = domain.replace(/\s+/g, '-');
-        const widthPercent = ((weight - 1.0) / 1.0) * 50 + 50;
+        // Sanitize domain ID to prevent XSS
+        const domainId = SecurityUtils.sanitizeDomainId(domain);
+        const widthPercent = SecurityUtils.sanitizePercent(((weight - 1.0) / 1.0) * 50 + 50);
         const highWeightClass = weight >= 1.5 ? 'weight-high' : '';
+        const safeHighWeightClass = SecurityUtils.sanitizeCssClass(highWeightClass);
 
+        // Create weight item container
         const weightItem = document.createElement('div');
         weightItem.className = 'weight-item';
         weightItem.setAttribute('data-domain', domain);
-        weightItem.innerHTML = `
-          <span class="weight-domain">${domain}</span>
-          <div class="weight-bar-container">
-            <div class="weight-bar ${highWeightClass}" id="maturity-weight-bar-${domainId}" style="width: ${widthPercent}%;"></div>
-          </div>
-          <span class="weight-value ${highWeightClass}" id="maturity-weight-value-${domainId}">${weight.toFixed(1)}×</span>
-          <input type="range"
-                 class="weight-slider"
-                 id="maturity-weight-slider-${domainId}"
-                 min="1.0"
-                 max="2.0"
-                 step="0.1"
-                 value="1.0"
-                 style="display: none;"
-                 data-domain="${domain}">
-        `;
+
+        // Create domain name span (safe - uses textContent)
+        const domainSpan = document.createElement('span');
+        domainSpan.className = 'weight-domain';
+        domainSpan.textContent = domain;
+
+        // Create weight bar container
+        const barContainer = document.createElement('div');
+        barContainer.className = 'weight-bar-container';
+
+        // Create weight bar
+        const weightBar = document.createElement('div');
+        weightBar.className = 'weight-bar ' + safeHighWeightClass;
+        weightBar.id = 'maturity-weight-bar-' + domainId;
+        weightBar.style.width = widthPercent + '%';
+
+        // Create weight value span
+        const valueSpan = document.createElement('span');
+        valueSpan.className = 'weight-value ' + safeHighWeightClass;
+        valueSpan.id = 'maturity-weight-value-' + domainId;
+        valueSpan.textContent = weight.toFixed(1) + '×';
+
+        // Create slider input
+        const sliderInput = document.createElement('input');
+        sliderInput.type = 'range';
+        sliderInput.className = 'weight-slider';
+        sliderInput.id = 'maturity-weight-slider-' + domainId;
+        sliderInput.min = '1.0';
+        sliderInput.max = '2.0';
+        sliderInput.step = '0.1';
+        sliderInput.value = '1.0';
+        sliderInput.style.display = 'none';
+        sliderInput.setAttribute('data-domain', domain);
+
+        // Assemble the DOM structure
+        barContainer.appendChild(weightBar);
+        weightItem.appendChild(domainSpan);
+        weightItem.appendChild(barContainer);
+        weightItem.appendChild(valueSpan);
+        weightItem.appendChild(sliderInput);
 
         container.appendChild(weightItem);
       });
